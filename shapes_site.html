@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ShapeWorld</title>
+<script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+<style>
+  /* ════════════════════════════════════════
+     딱 5개 도형만 — 다른 도형 없음
+  ════════════════════════════════════════ */
+  .hex  { clip-path: polygon(25% 0%,75% 0%,100% 50%,75% 100%,25% 100%,0% 50%); }
+  .pent { clip-path: polygon(50% 0%,100% 38%,82% 100%,18% 100%,0% 38%); }
+  .tri  { clip-path: polygon(50% 0%,100% 100%,0% 100%); }
+  .trid { clip-path: polygon(0% 0%,100% 0%,50% 100%); }  /* 거꾸로 삼각형 */
+  .trir { clip-path: polygon(0% 0%,100% 50%,0% 100%); }  /* 오른쪽 삼각형 */
+  .tril { clip-path: polygon(100% 0%,0% 50%,100% 100%); }/* 왼쪽  삼각형 */
+  .oct  { clip-path: polygon(30% 0%,70% 0%,100% 30%,100% 70%,70% 100%,30% 100%,0% 70%,0% 30%); }
+
+  html { scroll-behavior:smooth; }
+  body { overflow-x:hidden; }
+
+  /* 애니메이션 */
+  @keyframes fl1 { 0%,100%{transform:translateY(0)   rotate(0deg)}  50%{transform:translateY(-18px) rotate(8deg)}  }
+  @keyframes fl2 { 0%,100%{transform:translateY(0)   rotate(0deg)}  50%{transform:translateY(14px)  rotate(-6deg)} }
+  @keyframes fl3 { 0%,100%{transform:translateY(0)   rotate(0deg)}  50%{transform:translateY(-10px) rotate(12deg)} }
+  @keyframes sp  { from{transform:rotate(0deg)}  to{transform:rotate(360deg)} }
+  @keyframes pu  { 0%,100%{transform:scale(1)}   50%{transform:scale(1.06)}  }
+  @keyframes fd  { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes orb { from{transform:rotate(0deg) translateX(110px) rotate(0deg)}
+                   to  {transform:rotate(360deg) translateX(110px) rotate(-360deg)} }
+  @keyframes orb2{ from{transform:rotate(180deg) translateX(90px) rotate(-180deg)}
+                   to  {transform:rotate(540deg) translateX(90px) rotate(-540deg)} }
+
+  .f1{animation:fl1 4s ease-in-out infinite;}
+  .f2{animation:fl2 5.5s ease-in-out infinite;}
+  .f3{animation:fl3 3.5s ease-in-out infinite;}
+  .sp{animation:sp 24s linear infinite;}
+  .pu{animation:pu 3s ease-in-out infinite;}
+  .fd{animation:fd .7s ease both;}
+  .orb1{animation:orb  6s linear infinite;}
+  .orb2{animation:orb2 9s linear infinite;}
+  .orb3{animation:orb  12s linear 1s infinite;}
+
+  /* 허니콤 */
+  .hc{display:flex;flex-direction:column;align-items:center;gap:5px;}
+  .hr{display:flex;gap:5px;}
+  .hr:nth-child(even){margin-left:calc(76px/2 + 2.5px);}
+
+  /* 공통 hover */
+  .sh:hover{transform:scale(1.12) rotate(6deg);transition:transform .3s cubic-bezier(.34,1.56,.64,1);}
+
+  /* ticker */
+  @keyframes tk{from{transform:translateX(100%)}to{transform:translateX(-100%)}}
+  .tk{animation:tk 16s linear infinite;display:inline-block;white-space:nowrap;}
+
+  /* section 진입 효과 */
+  .reveal{opacity:0;transform:translateY(32px);transition:opacity .6s ease,transform .6s ease;}
+  .reveal.in{opacity:1;transform:none;}
+</style>
+</head>
+<body class="bg-[var(--background)] text-[var(--foreground)] min-h-screen">
+
+
+<!-- ══════════════════════════════════
+  NAV  — 육각형만
+══════════════════════════════════ -->
+<nav class="flex flex-wrap justify-center gap-3 py-6 px-4">
+
+  <!-- 로고 hexagon -->
+  <div class="hex pu flex items-center justify-center cursor-pointer sh"
+       style="width:100px;height:100px;background:var(--primary);"
+       onclick="window.scrollTo({top:0,behavior:'smooth'})">
+    <span style="color:var(--primary-foreground);font-size:11px;font-weight:900;text-align:center;line-height:1.4;padding:0 18px;">SHAPE<br>WORLD</span>
+  </div>
+
+  <!-- 메뉴 hexagons -->
+  <div class="flex flex-wrap gap-2 items-center">
+    <div class="hex flex items-center justify-center cursor-pointer sh"
+         style="width:72px;height:72px;background:#6366f1;"
+         onclick="document.getElementById('showcase').scrollIntoView({behavior:'smooth'})">
+      <span style="color:#fff;font-size:10px;font-weight:800;text-align:center;padding:0 14px;">도형<br>소개</span>
+    </div>
+    <div class="hex flex items-center justify-center cursor-pointer sh"
+         style="width:72px;height:72px;background:#f59e0b;"
+         onclick="document.getElementById('hcomb').scrollIntoView({behavior:'smooth'})">
+      <span style="color:#fff;font-size:10px;font-weight:800;text-align:center;padding:0 14px;">허니<br>콤</span>
+    </div>
+    <div class="hex flex items-center justify-center cursor-pointer sh"
+         style="width:72px;height:72px;background:#10b981;"
+         onclick="document.getElementById('statssec').scrollIntoView({behavior:'smooth'})">
+      <span style="color:#fff;font-size:10px;font-weight:800;text-align:center;padding:0 14px;">통계</span>
+    </div>
+    <div class="hex flex items-center justify-center cursor-pointer sh"
+         style="width:72px;height:72px;background:#8b5cf6;"
+         onclick="document.getElementById('gallery').scrollIntoView({behavior:'smooth'})">
+      <span style="color:#fff;font-size:10px;font-weight:800;text-align:center;padding:0 14px;">갤러리</span>
+    </div>
+    <div class="hex flex items-center justify-center cursor-pointer sh"
+         style="width:72px;height:72px;background:#ec4899;"
+         onclick="document.getElementById('footer').scrollIntoView({behavior:'smooth'})">
+      <span style="color:#fff;font-size:10px;font-weight:800;text-align:center;padding:0 14px;">소개</span>
+    </div>
+  </div>
+</nav>
+
+<!-- 삼각형 구분선 -->
+<div style="display:flex;justify-content:center;flex-wrap:wrap;gap:0;line-height:0;margin-bottom:0;">
+  <div class="trid" style="width:48px;height:24px;background:#6366f1;opacity:.7;"></div>
+  <div class="trid" style="width:48px;height:24px;background:#ec4899;opacity:.7;"></div>
+  <div class="trid" style="width:48px;height:24px;background:#f59e0b;opacity:.7;"></div>
+  <div class="trid" style="width:48px;height:24px;background:#10b981;opacity:.7;"></div>
+  <div class="trid" style="width:48px;height:24px;background:#8b5cf6;opacity:.7;"></div>
+  <div class="trid" style="width:48px;height:24px;background:#6366f1;opacity:.7;"></div>
+  <div class="trid" style="width:48px;height:24px;background:#ec4899;opacity:.7;"></div>
+  <div class="trid" style="width:48px;height:24px;background:#f59e0b;opacity:.7;"></div>
+  <div class="trid" style="width:48px;height:24px;background:#10b981;opacity:.7;"></div>
+  <div class="trid" style="width:48px;height:24px;background:#8b5cf6;opacity:.7;"></div>
+  <div class="trid" style="width:48px;height:24px;background:#6366f1;opacity:.7;"></div>
+  <div class="trid" style="width:48px;height:24px;background:#ec4899;opacity:.7;"></div>
+  <div class="trid" style="width:48px;height:24px;background:#f59e0b;opacity:.7;"></div>
+  <div class="trid" style="width:48px;height:24px;background:#10b981;opacity:.7;"></div>
+  <div class="trid" style="width:48px;height:24px;background:#8b5cf6;opacity:.7;"></div>
+</div>
+
+
+<!-- ══════════════════════════════════
+  HERO  — 중앙 Hex + 4개 도형 공전
+══════════════════════════════════ -->
+<section id="hero" class="py-20 flex flex-col items-center">
+  <!-- Orbit system -->
+  <div class="relative flex items-center justify-center" style="width:320px;height:320px;">
+
+    <!-- 배경 회전 Octagon (장식) -->
+    <div class="oct sp" style="position:absolute;width:300px;height:300px;background:color-mix(in srgb,var(--primary) 8%,transparent);"></div>
+
+    <!-- 중앙 Hexagon -->
+    <div class="hex pu flex items-center justify-center" style="width:200px;height:200px;background:var(--primary);z-index:10;position:relative;">
+      <div style="color:var(--primary-foreground);text-align:center;padding:0 22%;line-height:1.3;">
+        <div style="font-size:20px;font-weight:900;">SHAPE</div>
+        <div style="font-size:20px;font-weight:900;">WORLD</div>
+        <div style="font-size:9px;margin-top:8px;opacity:.75;font-weight:600;">5개의 도형으로<br>만든 세상</div>
+      </div>
+    </div>
+
+    <!-- 공전 Pentagon -->
+    <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">
+      <div class="orb1" style="position:absolute;">
+        <div class="pent f1 sh" style="width:64px;height:64px;background:#f59e0b;cursor:pointer;" title="Pentagon"></div>
+      </div>
+    </div>
+
+    <!-- 공전 Triangle -->
+    <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">
+      <div class="orb2" style="position:absolute;">
+        <div class="tri f2 sh" style="width:60px;height:60px;background:#10b981;cursor:pointer;" title="Triangle"></div>
+      </div>
+    </div>
+
+    <!-- 공전 Octagon -->
+    <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">
+      <div class="orb3" style="position:absolute;">
+        <div class="oct f3 sh" style="width:58px;height:58px;background:#8b5cf6;cursor:pointer;" title="Octagon"></div>
+      </div>
+    </div>
+
+    <!-- 공전 Pic (SVG) -->
+    <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">
+      <div style="animation:orb 8s linear 2s infinite;position:absolute;">
+        <svg width="64" height="64" viewBox="0 0 64 64" class="f1 sh" style="cursor:pointer;" title="Pic">
+          <path d="M32 32 L32 4 A28 28 0 0 1 53 51 Z" fill="#ec4899"/>
+          <path d="M32 32 L53 51 A28 28 0 1 1 32 4 Z" fill="#ec4899" opacity=".45"/>
+        </svg>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 5도형 레이블 (도형 + 이름) -->
+  <div class="flex gap-6 mt-10 flex-wrap justify-center">
+    <div class="flex flex-col items-center gap-2">
+      <div class="hex sh" style="width:44px;height:44px;background:#6366f1;cursor:pointer;"></div>
+      <span style="font-size:11px;font-weight:700;color:var(--foreground);">HEXAGON</span>
+    </div>
+    <div class="flex flex-col items-center gap-2">
+      <svg width="44" height="44" viewBox="0 0 44 44" class="sh" style="cursor:pointer;">
+        <path d="M22 22 L22 3 A19 19 0 0 1 35 36 Z" fill="#ec4899"/>
+        <path d="M22 22 L35 36 A19 19 0 1 1 22 3 Z" fill="#ec4899" opacity=".4"/>
+      </svg>
+      <span style="font-size:11px;font-weight:700;color:var(--foreground);">PIC</span>
+    </div>
+    <div class="flex flex-col items-center gap-2">
+      <div class="pent sh" style="width:44px;height:44px;background:#f59e0b;cursor:pointer;"></div>
+      <span style="font-size:11px;font-weight:700;color:var(--foreground);">PENTAGON</span>
+    </div>
+    <div class="flex flex-col items-center gap-2">
+      <div class="tri sh" style="width:44px;height:44px;background:#10b981;cursor:pointer;"></div>
+      <span style="font-size:11px;font-weight:700;color:var(--foreground);">TRIANGLE</span>
+    </div>
+    <div class="flex flex-col items-center gap-2">
+      <div class="oct sh" style="width:44px;height:44px;background:#8b5cf6;cursor:pointer;"></div>
+      <span style="font-size:11px;font-weight:700;color:var(--foreground);">OCTAGON</span>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════
+  삼각형 Ticker
+══════════════════════════════════ -->
+<div style="overflow:hidden;padding:6px 0;background:color-mix(in srgb,var(--primary) 12%,transparent);">
+  <div class="tk" style="display:flex;align-items:center;gap:10px;">
+    <div class="tri"  style="width:14px;height:14px;background:#6366f1;flex-shrink:0;"></div><span style="font-size:11px;font-weight:700;"> HEXAGON </span>
+    <div class="tri"  style="width:14px;height:14px;background:#ec4899;flex-shrink:0;"></div><span style="font-size:11px;font-weight:700;"> PIC </span>
+    <div class="tri"  style="width:14px;height:14px;background:#f59e0b;flex-shrink:0;"></div><span style="font-size:11px;font-weight:700;"> PENTAGON </span>
+    <div class="tri"  style="width:14px;height:14px;background:#10b981;flex-shrink:0;"></div><span style="font-size:11px;font-weight:700;"> TRIANGLE </span>
+    <div class="tri"  style="width:14px;height:14px;background:#8b5cf6;flex-shrink:0;"></div><span style="font-size:11px;font-weight:700;"> OCTAGON </span>
+    <div class="oct"  style="width:14px;height:14px;background:#6366f1;flex-shrink:0;"></div><span style="font-size:11px;font-weight:700;"> HEXAGON </span>
+    <div class="pent" style="width:14px;height:14px;background:#ec4899;flex-shrink:0;"></div><span style="font-size:11px;font-weight:700;"> PIC </span>
+    <div class="hex"  style="width:14px;height:14px;background:#f59e0b;flex-shrink:0;"></div><span style="font-size:11px;font-weight:700;"> PENTAGON </span>
+    <div class="tri"  style="width:14px;height:14px;background:#10b981;flex-shrink:0;"></div><span style="font-size:11px;font-weight:700;"> TRIANGLE </span>
+    <div class="oct"  style="width:14px;height:14px;background:#8b5cf6;flex-shrink:0;"></div><span style="font-size:11px;font-weight:700;"> OCTAGON </span>
+    <div class="tri"  style="width:14px;height:14px;background:#6366f1;flex-shrink:0;"></div><span style="font-size:11px;font-weight:700;"> HEXAGON </span>
+    <div class="pent" style="width:14px;height:14px;background:#ec4899;flex-shrink:0;"></div><span style="font-size:11px;font-weight:700;"> PIC </span>
+    <div class="hex"  style="width:14px;height:14px;background:#f59e0b;flex-shrink:0;"></div><span style="font-size:11px;font-weight:700;"> PENTAGON </span>
+    <div class="tri"  style="width:14px;height:14px;background:#10b981;flex-shrink:0;"></div><span style="font-size:11px;font-weight:700;"> TRIANGLE </span>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════
+  SHOWCASE  — 5개 도형 대형 소개
+══════════════════════════════════ -->
+<section id="showcase" class="py-16 reveal">
+  <div class="text-center mb-12">
+    <!-- 제목 위에 삼각형 장식 3개 -->
+    <div style="display:flex;justify-content:center;gap:6px;margin-bottom:12px;">
+      <div class="tri" style="width:16px;height:16px;background:#6366f1;"></div>
+      <div class="tri" style="width:22px;height:22px;background:#ec4899;"></div>
+      <div class="tri" style="width:16px;height:16px;background:#10b981;"></div>
+    </div>
+    <h2 style="font-size:26px;font-weight:900;color:var(--foreground);">5개의 도형</h2>
+  </div>
+
+  <div class="flex flex-wrap justify-center gap-8 px-4">
+
+    <!-- HEXAGON -->
+    <div class="flex flex-col items-center gap-4 reveal">
+      <div class="hex sh flex items-center justify-center" style="width:160px;height:160px;background:#6366f1;cursor:pointer;">
+        <div style="text-align:center;color:#fff;padding:0 20%;line-height:1.4;">
+          <div style="font-size:28px;font-weight:900;">6</div>
+          <div style="font-size:9px;font-weight:700;margin-top:2px;">SIDES</div>
+        </div>
+      </div>
+      <!-- 삼각형 아래 화살표 대신 삼각형으로 표시 -->
+      <div class="trid" style="width:24px;height:12px;background:#6366f1;opacity:.5;"></div>
+      <span style="font-size:13px;font-weight:800;color:#6366f1;">HEXAGON</span>
+      <span style="font-size:11px;text-align:center;max-width:140px;color:var(--muted-foreground);">내각합 720° · 벌집 구조</span>
+    </div>
+
+    <!-- PIC -->
+    <div class="flex flex-col items-center gap-4 reveal">
+      <div class="flex items-center justify-center sh" style="width:160px;height:160px;cursor:pointer;position:relative;">
+        <svg width="160" height="160" viewBox="0 0 160 160">
+          <path d="M80 80 L80 10 A70 70 0 0 1 131 117 Z" fill="#ec4899"/>
+          <path d="M80 80 L131 117 A70 70 0 1 1 80 10 Z" fill="#ec4899" opacity=".45"/>
+          <text x="80" y="78" text-anchor="middle" fill="white" font-size="22" font-weight="900">∞</text>
+          <text x="80" y="95" text-anchor="middle" fill="white" font-size="9" font-weight="700">SECTOR</text>
+        </svg>
+      </div>
+      <div class="trid" style="width:24px;height:12px;background:#ec4899;opacity:.5;"></div>
+      <span style="font-size:13px;font-weight:800;color:#ec4899;">PIC</span>
+      <span style="font-size:11px;text-align:center;max-width:140px;color:var(--muted-foreground);">원의 부채꼴 · 데이터 시각화</span>
+    </div>
+
+    <!-- PENTAGON -->
+    <div class="flex flex-col items-center gap-4 reveal">
+      <div class="pent sh flex items-center justify-center" style="width:160px;height:160px;background:#f59e0b;cursor:pointer;">
+        <div style="text-align:center;color:#fff;padding:5% 18% 0;line-height:1.4;">
+          <div style="font-size:28px;font-weight:900;">5</div>
+          <div style="font-size:9px;font-weight:700;margin-top:2px;">SIDES</div>
+        </div>
+      </div>
+      <div class="trid" style="width:24px;height:12px;background:#f59e0b;opacity:.5;"></div>
+      <span style="font-size:13px;font-weight:800;color:#f59e0b;">PENTAGON</span>
+      <span style="font-size:11px;text-align:center;max-width:140px;color:var(--muted-foreground);">내각합 540° · 별 모양의 기본</span>
+    </div>
+
+    <!-- TRIANGLE -->
+    <div class="flex flex-col items-center gap-4 reveal">
+      <div class="tri sh flex items-center justify-center" style="width:160px;height:160px;background:#10b981;cursor:pointer;">
+        <div style="text-align:center;color:#fff;padding:40% 15% 5%;line-height:1.4;">
+          <div style="font-size:28px;font-weight:900;">3</div>
+          <div style="font-size:9px;font-weight:700;margin-top:2px;">SIDES</div>
+        </div>
+      </div>
+      <div class="trid" style="width:24px;height:12px;background:#10b981;opacity:.5;"></div>
+      <span style="font-size:13px;font-weight:800;color:#10b981;">TRIANGLE</span>
+      <span style="font-size:11px;text-align:center;max-width:140px;color:var(--muted-foreground);">내각합 180° · 가장 강한 형태</span>
+    </div>
+
+    <!-- OCTAGON -->
+    <div class="flex flex-col items-center gap-4 reveal">
+      <div class="oct sh flex items-center justify-center" style="width:160px;height:160px;background:#8b5cf6;cursor:pointer;">
+        <div style="text-align:center;color:#fff;padding:0 22%;line-height:1.4;">
+          <div style="font-size:28px;font-weight:900;">8</div>
+          <div style="font-size:9px;font-weight:700;margin-top:2px;">SIDES</div>
+        </div>
+      </div>
+      <div class="trid" style="width:24px;height:12px;background:#8b5cf6;opacity:.5;"></div>
+      <span style="font-size:13px;font-weight:800;color:#8b5cf6;">OCTAGON</span>
+      <span style="font-size:11px;text-align:center;max-width:140px;color:var(--muted-foreground);">내각합 1080° · 정지 표지판</span>
+    </div>
+
+  </div>
+</section>
+
+
+<!-- 삼각형 구분선 -->
+<div style="display:flex;flex-wrap:wrap;gap:0;line-height:0;justify-content:center;">
+  <div class="tri" style="width:36px;height:20px;background:#6366f1;opacity:.4;"></div>
+  <div class="tri" style="width:36px;height:20px;background:#ec4899;opacity:.4;"></div>
+  <div class="tri" style="width:36px;height:20px;background:#f59e0b;opacity:.4;"></div>
+  <div class="tri" style="width:36px;height:20px;background:#10b981;opacity:.4;"></div>
+  <div class="tri" style="width:36px;height:20px;background:#8b5cf6;opacity:.4;"></div>
+  <div class="tri" style="width:36px;height:20px;background:#6366f1;opacity:.4;"></div>
+  <div class="tri" style="width:36px;height:20px;background:#ec4899;opacity:.4;"></div>
+  <div class="tri" style="width:36px;height:20px;background:#f59e0b;opacity:.4;"></div>
+  <div class="tri" style="width:36px;height:20px;background:#10b981;opacity:.4;"></div>
+  <div class="tri" style="width:36px;height:20px;background:#8b5cf6;opacity:.4;"></div>
+  <div class="tri" style="width:36px;height:20px;background:#6366f1;opacity:.4;"></div>
+  <div class="tri" style="width:36px;height:20px;background:#ec4899;opacity:.4;"></div>
+  <div class="tri" style="width:36px;height:20px;background:#f59e0b;opacity:.4;"></div>
+  <div class="tri" style="width:36px;height:20px;background:#10b981;opacity:.4;"></div>
+  <div class="tri" style="width:36px;height:20px;background:#8b5cf6;opacity:.4;"></div>
+  <div class="tri" style="width:36px;height:20px;background:#6366f1;opacity:.4;"></div>
+  <div class="tri" style="width:36px;height:20px;background:#ec4899;opacity:.4;"></div>
+</div>
+
+
+<!-- ══════════════════════════════════
+  HONEYCOMB  — 육각형 허니콤 그리드
+══════════════════════════════════ -->
+<section id="hcomb" class="py-16 reveal">
+  <div class="text-center mb-10">
+    <div style="display:flex;justify-content:center;gap:4px;margin-bottom:10px;">
+      <div class="hex" style="width:12px;height:12px;background:#6366f1;"></div>
+      <div class="hex" style="width:12px;height:12px;background:#ec4899;"></div>
+      <div class="hex" style="width:12px;height:12px;background:#f59e0b;"></div>
+    </div>
+    <h2 style="font-size:22px;font-weight:900;color:var(--foreground);">HEXAGON HONEYCOMB</h2>
+  </div>
+
+  <div class="hc" id="hcGrid"></div>
+</section>
+
+
+<!-- 거꾸로 삼각형 구분선 -->
+<div style="display:flex;flex-wrap:wrap;gap:0;line-height:0;justify-content:center;">
+  <div class="trid" style="width:36px;height:20px;background:#8b5cf6;opacity:.5;"></div>
+  <div class="trid" style="width:36px;height:20px;background:#10b981;opacity:.5;"></div>
+  <div class="trid" style="width:36px;height:20px;background:#f59e0b;opacity:.5;"></div>
+  <div class="trid" style="width:36px;height:20px;background:#ec4899;opacity:.5;"></div>
+  <div class="trid" style="width:36px;height:20px;background:#6366f1;opacity:.5;"></div>
+  <div class="trid" style="width:36px;height:20px;background:#8b5cf6;opacity:.5;"></div>
+  <div class="trid" style="width:36px;height:20px;background:#10b981;opacity:.5;"></div>
+  <div class="trid" style="width:36px;height:20px;background:#f59e0b;opacity:.5;"></div>
+  <div class="trid" style="width:36px;height:20px;background:#ec4899;opacity:.5;"></div>
+  <div class="trid" style="width:36px;height:20px;background:#6366f1;opacity:.5;"></div>
+  <div class="trid" style="width:36px;height:20px;background:#8b5cf6;opacity:.5;"></div>
+  <div class="trid" style="width:36px;height:20px;background:#10b981;opacity:.5;"></div>
+  <div class="trid" style="width:36px;height:20px;background:#f59e0b;opacity:.5;"></div>
+  <div class="trid" style="width:36px;height:20px;background:#ec4899;opacity:.5;"></div>
+  <div class="trid" style="width:36px;height:20px;background:#6366f1;opacity:.5;"></div>
+</div>
+
+
+<!-- ══════════════════════════════════
+  STATS  — PIC 파이 + 오각형 진행바
+══════════════════════════════════ -->
+<section id="statssec" class="py-16 reveal">
+  <div class="text-center mb-10">
+    <div style="display:flex;justify-content:center;gap:4px;margin-bottom:10px;">
+      <svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 7 L7 1 A6 6 0 0 1 12 10 Z" fill="#ec4899"/><path d="M7 7 L12 10 A6 6 0 1 1 7 1 Z" fill="#ec4899" opacity=".4"/></svg>
+      <svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 7 L7 1 A6 6 0 0 1 12 10 Z" fill="#f59e0b"/><path d="M7 7 L12 10 A6 6 0 1 1 7 1 Z" fill="#f59e0b" opacity=".4"/></svg>
+    </div>
+    <h2 style="font-size:22px;font-weight:900;color:var(--foreground);">통계 & 데이터</h2>
+  </div>
+
+  <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:40px;padding:0 16px;">
+
+    <!-- PIC 파이 차트 (PIC 조각들로만 구성) -->
+    <div class="flex flex-col items-center">
+      <svg id="piesvg" width="220" height="220" viewBox="0 0 220 220"></svg>
+      <div id="pielegend" style="margin-top:16px;display:flex;flex-direction:column;gap:6px;"></div>
+    </div>
+
+    <!-- Pentagon progress bars -->
+    <div style="display:flex;flex-direction:column;gap:16px;min-width:260px;">
+      <h3 style="font-size:14px;font-weight:800;color:var(--foreground);">내각의 합 비교</h3>
+      <div id="pentbars"></div>
+    </div>
+
+  </div>
+
+  <!-- Octagon stat widgets -->
+  <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:16px;margin-top:40px;" id="octStats"></div>
+</section>
+
+
+<!-- 삼각형 패턴 전환 -->
+<div style="display:flex;flex-wrap:wrap;line-height:0;justify-content:center;">
+  <div class="tri"  style="width:30px;height:20px;background:#6366f1;opacity:.3;"></div>
+  <div class="trid" style="width:30px;height:20px;background:#ec4899;opacity:.3;"></div>
+  <div class="tri"  style="width:30px;height:20px;background:#f59e0b;opacity:.3;"></div>
+  <div class="trid" style="width:30px;height:20px;background:#10b981;opacity:.3;"></div>
+  <div class="tri"  style="width:30px;height:20px;background:#8b5cf6;opacity:.3;"></div>
+  <div class="trid" style="width:30px;height:20px;background:#6366f1;opacity:.3;"></div>
+  <div class="tri"  style="width:30px;height:20px;background:#ec4899;opacity:.3;"></div>
+  <div class="trid" style="width:30px;height:20px;background:#f59e0b;opacity:.3;"></div>
+  <div class="tri"  style="width:30px;height:20px;background:#10b981;opacity:.3;"></div>
+  <div class="trid" style="width:30px;height:20px;background:#8b5cf6;opacity:.3;"></div>
+  <div class="tri"  style="width:30px;height:20px;background:#6366f1;opacity:.3;"></div>
+  <div class="trid" style="width:30px;height:20px;background:#ec4899;opacity:.3;"></div>
+  <div class="tri"  style="width:30px;height:20px;background:#f59e0b;opacity:.3;"></div>
+  <div class="trid" style="width:30px;height:20px;background:#10b981;opacity:.3;"></div>
+  <div class="tri"  style="width:30px;height:20px;background:#8b5cf6;opacity:.3;"></div>
+  <div class="trid" style="width:30px;height:20px;background:#6366f1;opacity:.3;"></div>
+  <div class="tri"  style="width:30px;height:20px;background:#ec4899;opacity:.3;"></div>
+  <div class="trid" style="width:30px;height:20px;background:#f59e0b;opacity:.3;"></div>
+</div>
+
+
+<!-- ══════════════════════════════════
+  GALLERY  — 5도형 모자이크
+══════════════════════════════════ -->
+<section id="gallery" class="py-16 reveal">
+  <div class="text-center mb-10">
+    <div style="display:flex;justify-content:center;gap:4px;margin-bottom:10px;">
+      <div class="pent" style="width:14px;height:14px;background:#f59e0b;"></div>
+      <div class="oct"  style="width:14px;height:14px;background:#8b5cf6;"></div>
+      <div class="pent" style="width:14px;height:14px;background:#ec4899;"></div>
+    </div>
+    <h2 style="font-size:22px;font-weight:900;color:var(--foreground);">SHAPE GALLERY</h2>
+  </div>
+
+  <div id="mosaicGrid" style="display:flex;flex-wrap:wrap;justify-content:center;gap:10px;padding:0 16px;"></div>
+</section>
+
+
+<!-- ══════════════════════════════════
+  PENTAGON  — 오각형 특집 섹션
+══════════════════════════════════ -->
+<section class="py-16 reveal">
+  <div class="text-center mb-10">
+    <div style="display:flex;justify-content:center;gap:5px;margin-bottom:10px;">
+      <div class="pent" style="width:16px;height:16px;background:#f59e0b;"></div>
+      <div class="pent" style="width:22px;height:22px;background:#f59e0b;"></div>
+      <div class="pent" style="width:16px;height:16px;background:#f59e0b;"></div>
+    </div>
+    <h2 style="font-size:22px;font-weight:900;color:var(--foreground);">PENTAGON 특집</h2>
+  </div>
+
+  <div class="flex flex-wrap justify-center gap-6 px-4" id="pentFacts"></div>
+</section>
+
+
+<!-- ══════════════════════════════════
+  FOOTER  — 삼각형 벽 + 도형 로고들
+══════════════════════════════════ -->
+<footer id="footer" style="padding:0;">
+  <!-- 삼각형 벽 -->
+  <div style="display:flex;flex-wrap:wrap;line-height:0;justify-content:center;">
+    <div class="tri"  style="width:50px;height:30px;background:#6366f1;"></div>
+    <div class="tri"  style="width:50px;height:30px;background:#ec4899;"></div>
+    <div class="tri"  style="width:50px;height:30px;background:#f59e0b;"></div>
+    <div class="tri"  style="width:50px;height:30px;background:#10b981;"></div>
+    <div class="tri"  style="width:50px;height:30px;background:#8b5cf6;"></div>
+    <div class="tri"  style="width:50px;height:30px;background:#6366f1;"></div>
+    <div class="tri"  style="width:50px;height:30px;background:#ec4899;"></div>
+    <div class="tri"  style="width:50px;height:30px;background:#f59e0b;"></div>
+    <div class="tri"  style="width:50px;height:30px;background:#10b981;"></div>
+    <div class="tri"  style="width:50px;height:30px;background:#8b5cf6;"></div>
+    <div class="tri"  style="width:50px;height:30px;background:#6366f1;"></div>
+    <div class="tri"  style="width:50px;height:30px;background:#ec4899;"></div>
+    <div class="tri"  style="width:50px;height:30px;background:#f59e0b;"></div>
+    <div class="tri"  style="width:50px;height:30px;background:#10b981;"></div>
+    <div class="tri"  style="width:50px;height:30px;background:#8b5cf6;"></div>
+    <div class="tri"  style="width:50px;height:30px;background:#6366f1;"></div>
+    <div class="tri"  style="width:50px;height:30px;background:#ec4899;"></div>
+    <div class="tri"  style="width:50px;height:30px;background:#f59e0b;"></div>
+    <div class="tri"  style="width:50px;height:30px;background:#10b981;"></div>
+    <div class="tri"  style="width:50px;height:30px;background:#8b5cf6;"></div>
+  </div>
+
+  <!-- Footer body -->
+  <div style="background:color-mix(in srgb,var(--primary) 8%,var(--card));padding:32px 16px;">
+    <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:16px;align-items:center;margin-bottom:20px;">
+      <div class="hex"  style="width:36px;height:36px;background:#6366f1;"></div>
+      <svg width="36" height="36" viewBox="0 0 36 36"><path d="M18 18 L18 2 A16 16 0 0 1 30 27 Z" fill="#ec4899"/><path d="M18 18 L30 27 A16 16 0 1 1 18 2 Z" fill="#ec4899" opacity=".4"/></svg>
+      <div class="pent" style="width:36px;height:36px;background:#f59e0b;"></div>
+      <div class="tri"  style="width:36px;height:36px;background:#10b981;"></div>
+      <div class="oct"  style="width:36px;height:36px;background:#8b5cf6;"></div>
+    </div>
+    <p style="text-align:center;font-size:11px;color:var(--muted-foreground);font-weight:600;">
+      ShapeWorld — Hexagon · Pic · Pentagon · Triangle · Octagon
+    </p>
+    <p style="text-align:center;font-size:10px;color:var(--muted-foreground);margin-top:4px;">오직 5개의 도형으로 만든 세상 © 2026</p>
+  </div>
+
+  <!-- 삼각형 하단 마무리 -->
+  <div style="display:flex;flex-wrap:wrap;line-height:0;justify-content:center;">
+    <div class="trid" style="width:50px;height:30px;background:#6366f1;"></div>
+    <div class="trid" style="width:50px;height:30px;background:#ec4899;"></div>
+    <div class="trid" style="width:50px;height:30px;background:#f59e0b;"></div>
+    <div class="trid" style="width:50px;height:30px;background:#10b981;"></div>
+    <div class="trid" style="width:50px;height:30px;background:#8b5cf6;"></div>
+    <div class="trid" style="width:50px;height:30px;background:#6366f1;"></div>
+    <div class="trid" style="width:50px;height:30px;background:#ec4899;"></div>
+    <div class="trid" style="width:50px;height:30px;background:#f59e0b;"></div>
+    <div class="trid" style="width:50px;height:30px;background:#10b981;"></div>
+    <div class="trid" style="width:50px;height:30px;background:#8b5cf6;"></div>
+    <div class="trid" style="width:50px;height:30px;background:#6366f1;"></div>
+    <div class="trid" style="width:50px;height:30px;background:#ec4899;"></div>
+    <div class="trid" style="width:50px;height:30px;background:#f59e0b;"></div>
+    <div class="trid" style="width:50px;height:30px;background:#10b981;"></div>
+    <div class="trid" style="width:50px;height:30px;background:#8b5cf6;"></div>
+    <div class="trid" style="width:50px;height:30px;background:#6366f1;"></div>
+    <div class="trid" style="width:50px;height:30px;background:#ec4899;"></div>
+    <div class="trid" style="width:50px;height:30px;background:#f59e0b;"></div>
+    <div class="trid" style="width:50px;height:30px;background:#10b981;"></div>
+    <div class="trid" style="width:50px;height:30px;background:#8b5cf6;"></div>
+  </div>
+</footer>
+
+
+<!-- ══════════════════════════════════
+  JAVASCRIPT
+══════════════════════════════════ -->
+<script>
+// ── 허니콤 생성 ──────────────────────────
+const hcData = [
+  {txt:'벌집', sub:'자연의 설계', c:'#6366f1'},
+  {txt:'720°', sub:'내각의 합', c:'#8b5cf6'},
+  {txt:'6면', sub:'6개의 변', c:'#0ea5e9'},
+  {txt:'결정', sub:'눈의 결정', c:'#6366f1'},
+  {txt:'효율', sub:'최고의 효율', c:'#f59e0b'},
+  {txt:'탄소', sub:'그래핀 구조', c:'#10b981'},
+  {txt:'벌', sub:'꿀벌의 집', c:'#ec4899'},
+  {txt:'도로', sub:'도로 표지판', c:'#6366f1'},
+  {txt:'철', sub:'볼트 헤드', c:'#8b5cf6'},
+  {txt:'세포', sub:'눈의 세포', c:'#0ea5e9'},
+  {txt:'미학', sub:'황금 비율', c:'#f59e0b'},
+  {txt:'강도', sub:'최강의 구조', c:'#10b981'},
+];
+const hcGrid = document.getElementById('hcGrid');
+const rows = [hcData.slice(0,4), hcData.slice(4,8), hcData.slice(8,12)];
+rows.forEach(row => {
+  const hr = document.createElement('div');
+  hr.className = 'hr';
+  row.forEach(d => {
+    const cell = document.createElement('div');
+    cell.className = 'hex sh flex items-center justify-center';
+    cell.style.cssText = `width:76px;height:76px;background:${d.c};cursor:pointer;flex-shrink:0;`;
+    cell.innerHTML = `<div style="text-align:center;color:#fff;padding:0 16px;line-height:1.3;">
+      <div style="font-size:11px;font-weight:900;">${d.txt}</div>
+      <div style="font-size:8px;opacity:.75;margin-top:2px;">${d.sub}</div>
+    </div>`;
+    hr.appendChild(cell);
+  });
+  hcGrid.appendChild(hr);
+});
+
+// ── PIC 파이 차트 ──────────────────────────
+const pieData = [
+  {name:'Triangle', sides:3,  color:'#10b981'},
+  {name:'Pentagon', sides:5,  color:'#f59e0b'},
+  {name:'Hexagon',  sides:6,  color:'#6366f1'},
+  {name:'Octagon',  sides:8,  color:'#8b5cf6'},
+  {name:'Pic',      sides:4,  color:'#ec4899'},  // representative value
+];
+const total = pieData.reduce((s,d)=>s+d.sides,0);
+const svg = document.getElementById('piesvg');
+const legend = document.getElementById('pielegend');
+let ang = -Math.PI/2;
+const cx=110,cy=110,r=90;
+pieData.forEach(d=>{
+  const slice = (d.sides/total)*2*Math.PI;
+  const ea = ang+slice;
+  const x1=cx+r*Math.cos(ang), y1=cy+r*Math.sin(ang);
+  const x2=cx+r*Math.cos(ea),  y2=cy+r*Math.sin(ea);
+  const lg= slice>Math.PI?1:0;
+  const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+  path.setAttribute('d',`M${cx},${cy} L${x1},${y1} A${r},${r} 0 ${lg},1 ${x2},${y2} Z`);
+  path.setAttribute('fill',d.color);
+  path.setAttribute('stroke','var(--background)');
+  path.setAttribute('stroke-width','3');
+  path.style.cursor='pointer';
+  path.style.transition='opacity .2s';
+  path.addEventListener('mouseover',()=>path.style.opacity='.7');
+  path.addEventListener('mouseout', ()=>path.style.opacity='1');
+  svg.appendChild(path);
+  ang=ea;
+
+  // legend: 삼각형 bullet
+  const row=document.createElement('div');
+  row.style.cssText='display:flex;align-items:center;gap:6px;font-size:11px;';
+  row.innerHTML=`<div class="tri" style="width:10px;height:10px;background:${d.color};flex-shrink:0;"></div>
+    <span style="color:var(--foreground);font-weight:600;">${d.name}</span>
+    <span style="color:var(--muted-foreground);">(${d.sides})</span>`;
+  legend.appendChild(row);
+});
+
+// ── Pentagon 진행바 ──────────────────────────
+const barData=[
+  {name:'Triangle', angle:180,  color:'#10b981', max:1080},
+  {name:'Pentagon', angle:540,  color:'#f59e0b', max:1080},
+  {name:'Hexagon',  angle:720,  color:'#6366f1', max:1080},
+  {name:'Octagon',  angle:1080, color:'#8b5cf6', max:1080},
+];
+const bc=document.getElementById('pentbars');
+barData.forEach(d=>{
+  const pct=(d.angle/d.max*100).toFixed(0);
+  const row=document.createElement('div');
+  row.style.marginBottom='12px';
+  // 진행 "바"를 오각형들로 표현
+  const pentCount=Math.round(pct/12);
+  let pents='';
+  for(let i=0;i<8;i++){
+    pents+=`<div class="pent" style="width:20px;height:20px;background:${i<pentCount?d.color:'color-mix(in srgb,'+d.color+' 20%,transparent)'};"></div>`;
+  }
+  row.innerHTML=`
+    <div style="display:flex;justify-content:space-between;font-size:11px;font-weight:700;margin-bottom:5px;">
+      <span style="color:var(--foreground);">${d.name}</span>
+      <span style="color:${d.color};">${d.angle}°</span>
+    </div>
+    <div style="display:flex;gap:3px;align-items:center;">${pents}</div>`;
+  bc.appendChild(row);
+});
+
+// ── Octagon stat cards ──────────────────────────
+const statData=[
+  {label:'도형 수', val:'5', color:'#6366f1'},
+  {label:'최소 변수', val:'3', color:'#10b981'},
+  {label:'최대 변수', val:'8', color:'#8b5cf6'},
+  {label:'총 내각합', val:'2520°', color:'#f59e0b'},
+  {label:'활용 분야', val:'∞', color:'#ec4899'},
+];
+const os=document.getElementById('octStats');
+statData.forEach(d=>{
+  const div=document.createElement('div');
+  div.className='oct sh flex items-center justify-center';
+  div.style.cssText=`width:110px;height:110px;background:${d.color};cursor:default;`;
+  div.innerHTML=`<div style="text-align:center;color:#fff;padding:0 22%;line-height:1.3;">
+    <div style="font-size:18px;font-weight:900;">${d.val}</div>
+    <div style="font-size:8px;margin-top:3px;opacity:.8;font-weight:700;">${d.label}</div>
+  </div>`;
+  os.appendChild(div);
+});
+
+// ── Gallery 모자이크 ──────────────────────────
+const mosaicItems=[
+  {type:'hex',  color:'#6366f1',name:'Hexagon'},
+  {type:'pic',  color:'#ec4899',name:'Pic'},
+  {type:'pent', color:'#f59e0b',name:'Pentagon'},
+  {type:'tri',  color:'#10b981',name:'Triangle'},
+  {type:'oct',  color:'#8b5cf6',name:'Octagon'},
+  {type:'hex',  color:'#0ea5e9',name:'Ice Hex'},
+  {type:'tri',  color:'#f43f5e',name:'Red Tri'},
+  {type:'oct',  color:'#f59e0b',name:'Gold Oct'},
+  {type:'pent', color:'#06b6d4',name:'Cyan Pent'},
+  {type:'pic',  color:'#84cc16',name:'Lime Pic'},
+  {type:'hex',  color:'#a855f7',name:'Purple Hex'},
+  {type:'tri',  color:'#fb923c',name:'Fire Tri'},
+  {type:'oct',  color:'#14b8a6',name:'Teal Oct'},
+  {type:'pent', color:'#f43f5e',name:'Ruby Pent'},
+  {type:'pic',  color:'#facc15',name:'Gold Pic'},
+  {type:'hex',  color:'#10b981',name:'Green Hex'},
+  {type:'tri',  color:'#8b5cf6',name:'Purple Tri'},
+  {type:'pent', color:'#6366f1',name:'Indigo Pent'},
+  {type:'oct',  color:'#ec4899',name:'Pink Oct'},
+  {type:'pic',  color:'#0ea5e9',name:'Blue Pic'},
+];
+const mg=document.getElementById('mosaicGrid');
+mosaicItems.forEach(d=>{
+  const wrap=document.createElement('div');
+  wrap.style.cssText='display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;';
+  let shapeHtml='';
+  const s=80;
+  if(d.type==='hex')  shapeHtml=`<div class="hex sh" style="width:${s}px;height:${s}px;background:${d.color};"></div>`;
+  if(d.type==='pent') shapeHtml=`<div class="pent sh" style="width:${s}px;height:${s}px;background:${d.color};"></div>`;
+  if(d.type==='tri')  shapeHtml=`<div class="tri sh" style="width:${s}px;height:${s}px;background:${d.color};"></div>`;
+  if(d.type==='oct')  shapeHtml=`<div class="oct sh" style="width:${s}px;height:${s}px;background:${d.color};"></div>`;
+  if(d.type==='pic')  shapeHtml=`<svg width="${s}" height="${s}" viewBox="0 0 ${s} ${s}" class="sh" style="cursor:pointer;">
+    <path d="M${s/2} ${s/2} L${s/2} ${s*.06} A${s*.44} ${s*.44} 0 0 1 ${s*.85} ${s*.75} Z" fill="${d.color}"/>
+    <path d="M${s/2} ${s/2} L${s*.85} ${s*.75} A${s*.44} ${s*.44} 0 1 1 ${s/2} ${s*.06} Z" fill="${d.color}" opacity=".4"/>
+  </svg>`;
+  wrap.innerHTML=`${shapeHtml}<span style="font-size:9px;font-weight:700;color:var(--muted-foreground);">${d.name}</span>`;
+  mg.appendChild(wrap);
+});
+
+// ── Pentagon facts ──────────────────────────
+const pfData=[
+  {txt:'Pentagon\n미국 국방부\n건물 형태', c:'#f59e0b'},
+  {txt:'Pentagon\n내각의 합\n540°', c:'#f43f5e'},
+  {txt:'Pentagon\n정오각형\n황금비 포함', c:'#06b6d4'},
+  {txt:'Pentagon\n별 모양\n5개 꼭짓점', c:'#a855f7'},
+  {txt:'Pentagon\n5겹 대칭\n완벽한 균형', c:'#10b981'},
+];
+const pf=document.getElementById('pentFacts');
+pfData.forEach(d=>{
+  const div=document.createElement('div');
+  div.className='pent sh flex items-center justify-center';
+  div.style.cssText=`width:130px;height:130px;background:${d.c};cursor:default;`;
+  const lines=d.txt.split('\n');
+  div.innerHTML=`<div style="text-align:center;color:#fff;padding:8% 18% 0;line-height:1.4;">
+    ${lines.map((l,i)=>`<div style="font-size:${i===0?10:9}px;font-weight:${i===0?900:600};opacity:${i===0?1:.85};">${l}</div>`).join('')}
+  </div>`;
+  pf.appendChild(div);
+});
+
+// ── Reveal on scroll ──────────────────────────
+const reveals=document.querySelectorAll('.reveal');
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{ if(e.isIntersecting) e.target.classList.add('in'); });
+},{threshold:0.1});
+reveals.forEach(r=>obs.observe(r));
+</script>
+</body>
+</html>
